@@ -113,7 +113,8 @@ void GLinit(int width, int height) {
 	Axis::setupAxis();
 	Cube::setupCube();*/
 
-	MyFirstShader::myInitCode();
+	//MyFirstShader::myInitCode();
+	Cube::setupCube();
 
 
 
@@ -129,8 +130,8 @@ void GLcleanup() {
 	Axis::cleanupAxis();
 	Cube::cleanupCube();
 */
-	MyFirstShader::myCleanupCode();
-
+	//MyFirstShader::myCleanupCode();
+	Cube::cleanupCube();
 }
 
 void GLrender(double currentTime) {
@@ -148,8 +149,8 @@ void GLrender(double currentTime) {
 	Axis::drawAxis();
 	Cube::drawCube();*/
 
-	MyFirstShader::myRenderCode(currentTime);
-	
+	//MyFirstShader::myRenderCode(currentTime);
+	Cube::drawCube();
 
 
 	ImGui::Render();
@@ -1009,7 +1010,10 @@ namespace MyFirstShader {
 		"#version 330\n\
 		\n\
 		void main(){\n\
-		gl_Position = vec4(0.0, 0.0, 0.5, 1.0);\n\
+		const vec4 vertices[3] = vec4[3](	vec4( 0.25, -0.25, 0.5, 1.0),\n\
+											vec4( 0.25,  0.25, 0.5, 1.0),\n\
+											vec4(-0.25, -0.25, 0.5, 1.0));\n\
+		gl_Position = vertices[gl_VertexID];\n\
 		}"
 	};
 
@@ -1074,7 +1078,7 @@ namespace MyFirstShader {
 
 		glUseProgram(myRenderProgram);
 		glPointSize(20.0f);
-		glDrawArrays(GL_POINTS, 0, 1);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 	}
 	//5. Cleanup shader
 	void myCleanupCode(void) {
