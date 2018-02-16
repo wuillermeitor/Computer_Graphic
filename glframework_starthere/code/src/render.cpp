@@ -113,7 +113,7 @@ void GLinit(int width, int height) {
 	Axis::setupAxis();
 	Cube::setupCube();*/
 
-
+	MyFirstShader::myInitCode();
 
 
 
@@ -129,7 +129,7 @@ void GLcleanup() {
 	Axis::cleanupAxis();
 	Cube::cleanupCube();
 */
-
+	MyFirstShader::myCleanupCode();
 
 }
 
@@ -147,12 +147,10 @@ void GLrender(double currentTime) {
 	/*Box::drawCube();
 	Axis::drawAxis();
 	Cube::drawCube();*/
-	float rojito = (float)sin(currentTime) * 0.5f + 0.5f;
-	float verdillo = (float)cos(currentTime) * 0.5f + 0.5f;
-	float azulillo = (float)sin(currentTime) * 0.5f + 0.5f;
 
-	const GLfloat red[] = { rojito, verdillo, 0.0f, 1.0f };
-	glClearBufferfv(GL_COLOR, 0, red);
+	MyFirstShader::myRenderCode(currentTime);
+	
+
 
 	ImGui::Render();
 }
@@ -1060,16 +1058,28 @@ namespace MyFirstShader {
 
 	//3. Init shader
 	void myInitCode(void) {
-
+		myRenderProgram = myshaderCompile();
+		glCreateVertexArrays(1, &myVAO);
+		glBindVertexArray(myVAO);
 	}
 
 	//4. Render shander
 	void myRenderCode(double currentTime) {
+		float rojito = (float)sin(currentTime) * 0.5f + 0.5f;
+		float verdillo = (float)cos(currentTime) * 0.5f + 0.5f;
+		float azulillo = (float)sin(currentTime) * 0.5f + 0.5f;
 
+		const GLfloat red[] = { rojito, verdillo, 0.0f, 1.0f };
+		glClearBufferfv(GL_COLOR, 0, red);
+
+		glUseProgram(myRenderProgram);
+		glPointSize(20.0f);
+		glDrawArrays(GL_POINTS, 0, 1);
 	}
 	//5. Cleanup shader
 	void myCleanupCode(void) {
-
+		glDeleteVertexArrays(1, &myVAO);
+		glDeleteProgram(myRenderProgram);
 	}
 
 }
