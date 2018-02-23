@@ -1002,6 +1002,7 @@ void main() {\n\
 		glUseProgram(cubeProgram);
 
 		glm::mat4 t = glm::translate(glm::mat4(1.0f), glm::vec3(1.f, 2.0f, 0.f));
+
 		//Cube::updateCube(t);
 		objMat = t;
 
