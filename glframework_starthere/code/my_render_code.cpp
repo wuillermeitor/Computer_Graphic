@@ -5,11 +5,31 @@
 
 #include <cstdio>
 #include <cassert>
-
+#include <imgui/imgui.h>
 #include "GL_framework.h"
 
-void myRenderCode(double currentTime) {
+namespace myRV {
+	const float FOV = glm::radians(65.f);
+	const float zNear = 1.f;
+	const float zFar = 50.f;
+	const int width = 512;
+	const int height = 512;
 
+	glm::mat4 _projection;
+	glm::mat4 _modelView;
+	glm::mat4 _MVP;
+	glm::mat4 _inv_modelview;
+	glm::vec4 _cameraPoint;
+
+	float panv[3] = { 0.f, -5.f, -15.f };
+	float rota[2] = { 0.f, 0.f };
+}
+
+void myRenderCode(double currentTime) {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	myRV::_modelView = glm::mat4(1.f);
+	myRV::_MVP = myRV::_projection * myRV::_modelView;
 
 
 	ImGui::Render();
@@ -25,6 +45,5 @@ void myInitCode(void) {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	glm::mat4 proj;
-	proj = glm::perspective(glm::radians(65.f), (float)512 / (float)512, 0.1f, 100.f);
+	myRV::_projection = glm::perspective(myRV::FOV, (float)myRV::width / (float)myRV::height, myRV::zNear, myRV::zFar);
 }

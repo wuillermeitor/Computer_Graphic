@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
 	int display_w, display_h;
 	SDL_GL_GetDrawableSize(mainwindow, &display_w, &display_h);
 	// Init scene
-	GLinit(display_w, display_h);
+	//GLinit(display_w, display_h);
 	//PhysicsInit();
 
 	myInitCode(); 
@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
 
 	myCleanupCode(); 
 
-	GLcleanup();
+	//GLcleanup();
 
 	ImGui_ImplSdlGL3_Shutdown();
 	SDL_GL_DeleteContext(maincontext);
