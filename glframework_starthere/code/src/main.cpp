@@ -21,8 +21,8 @@ extern void GLrender(double currentTime);
 
 
 extern void myRenderCode(double currentTime);
-//extern void myCleanupCode(void);
-//extern void myInitCode(void);
+extern void myCleanupCode(void);
+extern void myInitCode(void);
 
 //////
 namespace {
@@ -90,10 +90,11 @@ int main(int argc, char** argv) {
 	GLinit(display_w, display_h);
 	//PhysicsInit();
 
-	//myInitCode();
+	myInitCode(); 
 
 	
 	// Setup ImGui binding
+	
 	ImGui_ImplSdlGL3_Init(mainwindow);
 
 
@@ -117,9 +118,10 @@ int main(int argc, char** argv) {
 		ImGui_ImplSdlGL3_NewFrame(mainwindow);
 
 		ImGuiIO& io = ImGui::GetIO();
-		
-		
+
+
 		GUI();
+	
 		//PhysicsUpdate((float)expected_frametime);
 		if(!io.WantCaptureMouse) {
 			MouseEvent ev = {io.MousePos.x, io.MousePos.y, 
@@ -131,11 +133,11 @@ int main(int argc, char** argv) {
 		}
 
 
-		double currentTime = (double)SDL_GetTicks() / 1000.0;
-		GLrender(currentTime);
+		//double currentTime = (double)SDL_GetTicks() / 1000.0;
+		//GLrender(currentTime);
 		
-		//double currentTime = (double) SDL_GetTicks() / 1000.0;
-		//myRenderCode(currentTime);
+		double currentTime = (double) SDL_GetTicks() / 1000.0;
+		myRenderCode(currentTime); 
 		
 
 
@@ -143,7 +145,7 @@ int main(int argc, char** argv) {
 		waitforFrameEnd();
 	}
 
-	//myCleanupCode();
+	myCleanupCode(); 
 
 	GLcleanup();
 

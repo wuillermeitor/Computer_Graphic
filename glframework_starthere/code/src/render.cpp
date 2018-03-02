@@ -108,6 +108,9 @@ void GLinit(int width, int height) {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
+	//float aux = 50.f;
+	//RV::_projection = glm::ortho((float)-width / aux, (float)width / aux, (float)-height / aux, (float)height / aux, RV::zNear, RV::zFar);
+
 	RV::_projection = glm::perspective(RV::FOV, (float)width/(float)height, RV::zNear, RV::zFar);
 
 	// Setup shaders & geometry
@@ -131,9 +134,11 @@ void GLrender(double currentTime) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	RV::_modelView = glm::mat4(1.f);
-	RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
-	RV::_modelView = glm::rotate(RV::_modelView, RV::rota[1], glm::vec3(1.f, 0.f, 0.f));
-	RV::_modelView = glm::rotate(RV::_modelView, RV::rota[0], glm::vec3(0.f, 1.f, 0.f));
+	//RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
+	//RV::_modelView = glm::rotate(RV::_modelView, RV::rota[1], glm::vec3(1.f, 0.f, 0.f));
+	//RV::_modelView = glm::rotate(RV::_modelView, RV::rota[0], glm::vec3(0.f, 1.f, 0.f));
+	//RV::_modelView = glm::lookAt(glm::vec3(0.f, 2.f, 10.f), myvec3, glm::vec3(0.f, 1.f, 0.f));
+
 
 	RV::_MVP = RV::_projection * RV::_modelView;
 
@@ -996,7 +1001,8 @@ void main() {\n\
 
 	void draw2Cubes(double currentTime) {
 
-
+		float time = 0;
+		time = currentTime;
 		glEnable(GL_PRIMITIVE_RESTART);
 		glBindVertexArray(cubeVao);
 		glUseProgram(cubeProgram);
@@ -1020,11 +1026,19 @@ void main() {\n\
 		//paint a green cube on the right side of the world
 
 		//t = glm::translate(glm::mat4(1.0f), glm::vec3((float)sin(currentTime)* 2.f + 1.f, 2.f, 0.f));
-		glm::mat4 t2 = glm::translate(glm::mat4(1.0f), glm::vec3(-3.f, 2.f, 0.f));
-		glm::mat4 r = glm::rotate(glm::mat4(1.0f), (float)currentTime* 2.f + 3.f, glm::vec3(0.f, 1.f, 0.f));
+		//glm::mat4 t2 = glm::translate(glm::mat4(1.0f), glm::vec3(1.f, 2.f, 0.f));
+		//glm::mat4 r = glm::rotate(glm::mat4(1.0f), (float)currentTime* 2.f + 3.f, glm::vec3(0.f, 1.f, 0.f));
 		//glm::mat4 s = glm::scale(glm::mat4(1.0f), glm::vec3((float)sin(currentTime)* 2.f + 3.f, (float)sin(currentTime)* 2.f + 3.f, (float)sin(currentTime)* 2.f + 3.f));
 		//Cube::updateCube(t);
-		objMat = t*r*t2;
+		//objMat = t*r*t2;
+
+		float timeDec = time - (int)time;
+		int timeInt = (int)time;
+
+		//RV::_projection = glm::ortho(((float)-500 / 50) + timeInt % 5 + timeDec, ((float)500 / 50) + timeInt % 5 + timeDec, (float)-500 / 50, (float)500 / 50, 0.1f, 100.f);
+
+		glm::mat4 t2 = glm::translate(glm::mat4(1.0f), glm::vec3(1.f, 2.f, 0.f));
+		objMat = t2;
 
 		glm::vec4 newColor2 = { 0.0f, (float)sin(currentTime)* 2.f + 2.f, 0.f, 1.0f };
 		Cube::updateColor(newColor2);
@@ -1033,7 +1047,6 @@ void main() {\n\
 		//glUniform4f(glGetUniformLocation(cubeProgram, "color"), 1.0f, 1.f, 1.f, 0.f);
 		glUniform4f(glGetUniformLocation(cubeProgram, "color"), myColor.r, myColor.g, myColor.b, myColor.a);
 		glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
-
 
 
 		glUseProgram(0);
