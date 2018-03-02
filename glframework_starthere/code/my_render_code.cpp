@@ -2,8 +2,10 @@
 #include <GL\glew.h>
 #include <glm\gtc\type_ptr.hpp>
 #include <glm\gtc\matrix_transform.hpp>
+#include <SDL.h>
 
 #include <cstdio>
+#include <iostream>
 #include <cassert>
 #include <imgui/imgui.h>
 #include "GL_framework.h"
@@ -25,7 +27,7 @@ namespace myRV {
 	const float zNear = 1.f;
 	const float zFar = 50.f;
 
-	const int width = 512;
+	const int width = 1080;
 	const int height = 512;
 
 	glm::mat4 _projection;
@@ -54,10 +56,11 @@ void myInitCode(void) {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	//float aux = 50.f;
-	//RV::_projection = glm::ortho((float)-width / aux, (float)width / aux, (float)-height / aux, (float)height / aux, RV::zNear, RV::zFar);
+	float aux = 50.f;
+	myRV::_projection = glm::ortho((float)-myRV::width / aux, (float)myRV::width / aux, (float)-myRV::height / aux, (float)myRV::height / aux, myRV::zNear, myRV::zFar);
 
-	myRV::_projection = glm::perspective(myRV::FOV, (float)myRV::width / (float)myRV::height, myRV::zNear, myRV::zFar);
+	//myRV::_projection = glm::perspective(myRV::FOV, (float)myRV::width / (float)myRV::height, myRV::zNear, myRV::zFar);
+
 
 	// Setup shaders & geometry
 	myBox::setupCube();
@@ -76,10 +79,17 @@ void myCleanupCode(void) {
 }
 
 void myRenderCode(double currentTime) {
+
+	const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
+	if (keyboardState[SDL_SCANCODE_1])
+		std::cout << "1" << std::endl;
+
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	myRV::_modelView = glm::mat4(1.f);
-	myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
+	//myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
+	myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(currentTime, myRV::panv[1], myRV::panv[2]));
 	myRV::_modelView = glm::rotate(myRV::_modelView, myRV::rota[1], glm::vec3(1.f, 0.f, 0.f));
 	myRV::_modelView = glm::rotate(myRV::_modelView, myRV::rota[0], glm::vec3(0.f, 1.f, 0.f));
 
@@ -131,6 +141,13 @@ void mylinkProgram(GLuint program) {
 	}
 }
 
+void GLResize(int width, int height) {
+	glViewport(0, 0, width, height);
+
+	if (height != 0) /*myRV::_projection = glm::perspective(myRV::FOV, (float)width / (float)height, myRV::zNear, myRV::zFar);*/ 
+		myRV::_projection = glm::ortho((float)-myRV::width / 50, (float)myRV::width / 50, (float)-myRV::height / 50, (float)myRV::height / 50, myRV::zNear, myRV::zFar);
+	else myRV::_projection = glm::perspective(myRV::FOV, 0.f, myRV::zNear, myRV::zFar);
+}
 
 ////////////////////////////////////////////////// BOX
 namespace myBox {

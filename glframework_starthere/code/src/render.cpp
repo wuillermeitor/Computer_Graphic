@@ -68,11 +68,11 @@ namespace RenderVars {
 }
 namespace RV = RenderVars;
 
-void GLResize(int width, int height) {
-	glViewport(0, 0, width, height);
-	if(height != 0) RV::_projection = glm::perspective(RV::FOV, (float)width / (float)height, RV::zNear, RV::zFar);
-	else RV::_projection = glm::perspective(RV::FOV, 0.f, RV::zNear, RV::zFar);
-}
+//void GLResize(int width, int height) {
+//	glViewport(0, 0, width, height);
+//	if(height != 0) RV::_projection = glm::perspective(RV::FOV, (float)width / (float)height, RV::zNear, RV::zFar);
+//	else RV::_projection = glm::perspective(RV::FOV, 0.f, RV::zNear, RV::zFar);
+//}
 
 void GLmousecb(MouseEvent ev) {
 	if(RV::prevMouse.waspressed && RV::prevMouse.button == ev.button) {
