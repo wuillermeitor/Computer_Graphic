@@ -70,7 +70,7 @@ void renderPrims() {
 		LilSpheres::drawParticles(startDrawingFromParticle, numParticlesToDraw);
 		// .............................................
 	}
-	
+
 	if (renderCloth)
 		ClothMesh::drawClothMesh();
 

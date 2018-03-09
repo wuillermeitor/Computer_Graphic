@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cassert>
 #include <imgui/imgui.h>
+#include <ctime>
 #include "GL_framework.h"
 
 
@@ -23,12 +24,12 @@ namespace myAxis {
 }
 
 namespace myRV {
-	const float FOV = glm::radians(65.f);
+	float FOV = glm::radians(65.f);
 	const float zNear = 1.f;
 	const float zFar = 50.f;
 
-	const int width = 1080;
-	const int height = 512;
+	const int width = 800;
+	const int height = 600;
 
 	glm::mat4 _projection;
 	glm::mat4 _modelView;
@@ -40,6 +41,9 @@ namespace myRV {
 	float rota[2] = { 0.f, 0.f };
 }
 
+bool Pressed1 = false;
+bool Pressed2 = false;
+bool Pressed3 = false;
 
 
 
@@ -79,22 +83,61 @@ void myCleanupCode(void) {
 }
 
 void myRenderCode(double currentTime) {
+	//Nota: Cada vez que cambias de 1 a 2 o viceversa, empieza por donde lo dejó porque el currenTime va aumentando y uso currentTime. Hay que cambiarlo pero de momento voy tirando.
 
 	const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
-	if (keyboardState[SDL_SCANCODE_1])
-		std::cout << "1" << std::endl;
+	if (keyboardState[SDL_SCANCODE_1]) {
+		myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
+		Pressed1 = true;
+		Pressed2 = false;
+		Pressed3 = false;
+	}
+	else if (keyboardState[SDL_SCANCODE_2]) {
+		Pressed1 = false;
+		Pressed2 = true;
+		Pressed3 = false;
+	}
+	else if (keyboardState[SDL_SCANCODE_3]) {
+		std::cout << "3" << std::endl;
+		Pressed1 = false;
+		Pressed2 = false;
+		Pressed3 = true;
+	}
 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	myRV::_modelView = glm::mat4(1.f);
-	//myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
-	myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(currentTime, myRV::panv[1], myRV::panv[2]));
+	myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
 	myRV::_modelView = glm::rotate(myRV::_modelView, myRV::rota[1], glm::vec3(1.f, 0.f, 0.f));
 	myRV::_modelView = glm::rotate(myRV::_modelView, myRV::rota[0], glm::vec3(0.f, 1.f, 0.f));
 
-
 	myRV::_MVP = myRV::_projection * myRV::_modelView;
+
+	if (Pressed1) {//A lateral travelling with an orthonormal perspective.
+		myRV::panv[2] = -15.f;
+		float aux = 50.f;
+		myRV::_projection = glm::ortho((float)-myRV::width / aux, (float)myRV::width / aux, (float)-myRV::height / aux, (float)myRV::height / aux, myRV::zNear, myRV::zFar);
+		myRV::_modelView = glm::mat4(1.f);
+		myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(currentTime, myRV::panv[1], myRV::panv[2]));
+
+		myRV::_MVP = myRV::_projection * myRV::_modelView;
+	}
+
+	if (Pressed2) {
+		myRV::_projection = glm::perspective(myRV::FOV, (float)myRV::width / (float)myRV::height, myRV::zNear, myRV::zFar);
+		myRV::_modelView = glm::mat4(1.f);
+		myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
+		//a) A close-up in perspective projection. The camera will approach objects in the middle of the scene, with some objects in background. 
+		if (myRV::panv[2] <= -5) {
+			myRV::panv[2] = -15.f+currentTime * 0.5f;
+		}
+		//b) An increase of the field of view of the camera, with the objects in the middle of the scene, and some objects in background.
+		else {
+			myRV::FOV = glm::radians(65.f + currentTime * 0.5f);
+		}
+		myRV::_MVP = myRV::_projection * myRV::_modelView;
+	}
 
 	// render code
 	myBox::drawCube();
@@ -144,7 +187,7 @@ void mylinkProgram(GLuint program) {
 void GLResize(int width, int height) {
 	glViewport(0, 0, width, height);
 
-	if (height != 0) /*myRV::_projection = glm::perspective(myRV::FOV, (float)width / (float)height, myRV::zNear, myRV::zFar);*/ 
+	if (height != 0) /*myRV::_projection = glm::perspective(myRV::FOV, (float)width / (float)height, myRV::zNear, myRV::zFar);*/
 		myRV::_projection = glm::ortho((float)-myRV::width / 50, (float)myRV::width / 50, (float)-myRV::height / 50, (float)myRV::height / 50, myRV::zNear, myRV::zFar);
 	else myRV::_projection = glm::perspective(myRV::FOV, 0.f, myRV::zNear, myRV::zFar);
 }
