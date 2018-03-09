@@ -124,7 +124,7 @@ void myRenderCode(double currentTime) {
 		myRV::_MVP = myRV::_projection * myRV::_modelView;
 	}
 
-	if (Pressed2) {
+	else if (Pressed2) {
 		myRV::_projection = glm::perspective(myRV::FOV, (float)myRV::width / (float)myRV::height, myRV::zNear, myRV::zFar);
 		myRV::_modelView = glm::mat4(1.f);
 		myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
@@ -138,6 +138,16 @@ void myRenderCode(double currentTime) {
 		}
 		myRV::_MVP = myRV::_projection * myRV::_modelView;
 	}
+
+	else if (Pressed3) {
+		myRV::_projection = glm::perspective(myRV::FOV, (float)myRV::width / (float)myRV::height, myRV::zNear, myRV::zFar);
+		myRV::_modelView = glm::mat4(1.f);
+		myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
+		myRV::panv[2] = -15.f + currentTime * 0.5f;
+		myRV::FOV = glm::radians(65.f + currentTime * 0.5f);
+		myRV::_MVP = myRV::_projection * myRV::_modelView;
+	}
+
 
 	// render code
 	myBox::drawCube();
