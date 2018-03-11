@@ -26,10 +26,7 @@ namespace myAxis {
 namespace myCube {
 	void setupCube();
 	void cleanupCube();
-	void updateCube(const glm::mat4& transform);
-	void drawCube();
-	void draw2Cubes(double currentTime);
-	void updateColor(const glm::vec4 newColor);
+	void drawCubes(glm::vec3 posicion);
 }
 
 namespace myRV {
@@ -53,6 +50,8 @@ namespace myRV {
 bool Pressed1 = false;
 bool Pressed2 = false;
 bool Pressed3 = false;
+
+
 
 
 
@@ -100,17 +99,20 @@ void myRenderCode(double currentTime) {
 		Pressed1 = true;
 		Pressed2 = false;
 		Pressed3 = false;
+		currentTime = 0;
 	}
 	else if (keyboardState[SDL_SCANCODE_2]) {
 		Pressed1 = false;
 		Pressed2 = true;
 		Pressed3 = false;
+		currentTime = 0;
 	}
 	else if (keyboardState[SDL_SCANCODE_3]) {
 		std::cout << "3" << std::endl;
 		Pressed1 = false;
 		Pressed2 = false;
 		Pressed3 = true;
+		currentTime = 0;
 	}
 
 
@@ -139,7 +141,7 @@ void myRenderCode(double currentTime) {
 		myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
 		//a) A close-up in perspective projection. The camera will approach objects in the middle of the scene, with some objects in background. 
 		if (myRV::panv[2] <= -5) {
-			myRV::panv[2] = -15.f+currentTime * 0.5f;
+			myRV::panv[2] = -15.f + currentTime * 0.5f;
 		}
 		//b) An increase of the field of view of the camera, with the objects in the middle of the scene, and some objects in background.
 		else {
@@ -157,11 +159,21 @@ void myRenderCode(double currentTime) {
 		myRV::_MVP = myRV::_projection * myRV::_modelView;
 	}
 
-
+	glm::vec3 posicion1(1.0f, 5.0f, 5.0f);
+	glm::vec3 posicion2(2.0f, 6.0f, 6.0f);
+	glm::vec3 posicion3(3.0f, 7.0f, 7.0f);
+	glm::vec3 posicion4(-1.f, 4.0f, 4.0f);
+	glm::vec3 posicion5(-2.0f, 3.0f, 3.0f);
+	glm::vec3 posicion6(-3.0f, 2.0f, 2.0f);
 	// render code
 	myBox::drawCube();
 	myAxis::drawAxis();
-	myCube::drawCube();
+	myCube::drawCubes(posicion1);
+	myCube::drawCubes(posicion2);
+	myCube::drawCubes(posicion3);
+	myCube::drawCubes(posicion4);
+	myCube::drawCubes(posicion5);
+	myCube::drawCubes(posicion6);
 
 	//MyFirstShader::myRenderCode(currentTime);
 
@@ -534,81 +546,26 @@ void main() {\n\
 		glDeleteShader(cubeShaders[0]);
 		glDeleteShader(cubeShaders[1]);
 	}
-	void updateCube(const glm::mat4& transform) {
-		objMat = transform;
-	}
-	void drawCube() {
-		glEnable(GL_PRIMITIVE_RESTART);
-		glBindVertexArray(cubeVao);
-		glUseProgram(cubeProgram);
-		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(objMat));
-		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(myRV::_modelView));
-		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(myRV::_MVP));
-		glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
-		glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
 
-		glUseProgram(0);
-		glBindVertexArray(0);
-		glDisable(GL_PRIMITIVE_RESTART);
-	}
+	void drawCubes(glm::vec3 posicion) {
 
-	void draw2Cubes(double currentTime) {
-
-		float time = 0;
-		time = currentTime;
 		glEnable(GL_PRIMITIVE_RESTART);
 		glBindVertexArray(cubeVao);
 		glUseProgram(cubeProgram);
 
-		glm::mat4 t = glm::translate(glm::mat4(1.0f), glm::vec3(1.f, 2.0f, 0.f));
+		glm::mat4 t = glm::translate(glm::mat4(1.0f), posicion);
 
-		//Cube::updateCube(t);
 		objMat = t;
 
-		glm::vec4 newColor = { 0.56f, 0.75f, 0.95f, 1.0f };
-		myCube::updateColor(newColor);
-
 		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(objMat));
 		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(myRV::_modelView));
 		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(myRV::_MVP));
-		//glUniform4f(glGetUniformLocation(cubeProgram, "color"), 1.0f, 1.f, 1.f, 0.f);
 		glUniform4f(glGetUniformLocation(cubeProgram, "color"), myColor.r, myColor.g, myColor.b, myColor.a);
 		glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
-
-
-		//paint a green cube on the right side of the world
-
-		//t = glm::translate(glm::mat4(1.0f), glm::vec3((float)sin(currentTime)* 2.f + 1.f, 2.f, 0.f));
-		//glm::mat4 t2 = glm::translate(glm::mat4(1.0f), glm::vec3(1.f, 2.f, 0.f));
-		//glm::mat4 r = glm::rotate(glm::mat4(1.0f), (float)currentTime* 2.f + 3.f, glm::vec3(0.f, 1.f, 0.f));
-		//glm::mat4 s = glm::scale(glm::mat4(1.0f), glm::vec3((float)sin(currentTime)* 2.f + 3.f, (float)sin(currentTime)* 2.f + 3.f, (float)sin(currentTime)* 2.f + 3.f));
-		//Cube::updateCube(t);
-		//objMat = t*r*t2;
-
-		float timeDec = time - (int)time;
-		int timeInt = (int)time;
-
-		//RV::_projection = glm::ortho(((float)-500 / 50) + timeInt % 5 + timeDec, ((float)500 / 50) + timeInt % 5 + timeDec, (float)-500 / 50, (float)500 / 50, 0.1f, 100.f);
-
-		glm::mat4 t2 = glm::translate(glm::mat4(1.0f), glm::vec3(1.f, 2.f, 0.f));
-		objMat = t2;
-
-		glm::vec4 newColor2 = { 0.0f, (float)sin(currentTime)* 2.f + 2.f, 0.f, 1.0f };
-		myCube::updateColor(newColor2);
-
-		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(objMat));
-		//glUniform4f(glGetUniformLocation(cubeProgram, "color"), 1.0f, 1.f, 1.f, 0.f);
-		glUniform4f(glGetUniformLocation(cubeProgram, "color"), myColor.r, myColor.g, myColor.b, myColor.a);
-		glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
-
 
 		glUseProgram(0);
 		glBindVertexArray(0);
 		glDisable(GL_PRIMITIVE_RESTART);
-	}
-
-	void updateColor(const glm::vec4 newColor) {
-		myColor = newColor;
 	}
 
 }
