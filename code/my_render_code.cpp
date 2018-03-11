@@ -23,6 +23,15 @@ namespace myAxis {
 	void drawAxis();
 }
 
+namespace myCube {
+	void setupCube();
+	void cleanupCube();
+	void updateCube(const glm::mat4& transform);
+	void drawCube();
+	void draw2Cubes(double currentTime);
+	void updateColor(const glm::vec4 newColor);
+}
+
 namespace myRV {
 	float FOV = glm::radians(65.f);
 	const float zNear = 1.f;
@@ -69,7 +78,7 @@ void myInitCode(void) {
 	// Setup shaders & geometry
 	myBox::setupCube();
 	myAxis::setupAxis();
-	//Cube::setupCube();
+	myCube::setupCube();
 
 	//myCube::setupCube();
 }
@@ -77,7 +86,7 @@ void myInitCode(void) {
 void myCleanupCode(void) {
 	myBox::cleanupCube();
 	myAxis::cleanupAxis();
-	//Cube::cleanupCube();
+	myCube::cleanupCube();
 	//MyFirstShader::myCleanupCode();
 	//Cube::cleanupCube();
 }
@@ -152,7 +161,7 @@ void myRenderCode(double currentTime) {
 	// render code
 	myBox::drawCube();
 	myAxis::drawAxis();
-	//Cube::drawCube();
+	myCube::drawCube();
 
 	//MyFirstShader::myRenderCode(currentTime);
 
@@ -393,3 +402,213 @@ void main() {\n\
 	}
 }
 
+////////////////////////////////////////////////// CUBE
+namespace myCube {
+	GLuint cubeVao;
+	GLuint cubeVbo[3];
+	GLuint cubeShaders[2];
+	GLuint cubeProgram;
+	glm::mat4 objMat = glm::mat4(1.f);
+
+	glm::vec4 myColor = { 0.0f, 0.5f, 1.0f, 1.0f };
+
+	extern const float halfW = 0.5f;
+	int numVerts = 24 + 6; // 4 vertex/face * 6 faces + 6 PRIMITIVE RESTART
+
+						   //   4---------7
+						   //  /|        /|
+						   // / |       / |
+						   //5---------6  |
+						   //|  0------|--3
+						   //| /       | /
+						   //|/        |/
+						   //1---------2
+	glm::vec3 verts[] = {
+		glm::vec3(-halfW, -halfW, -halfW),
+		glm::vec3(-halfW, -halfW,  halfW),
+		glm::vec3(halfW, -halfW,  halfW),
+		glm::vec3(halfW, -halfW, -halfW),
+		glm::vec3(-halfW,  halfW, -halfW),
+		glm::vec3(-halfW,  halfW,  halfW),
+		glm::vec3(halfW,  halfW,  halfW),
+		glm::vec3(halfW,  halfW, -halfW)
+	};
+	glm::vec3 norms[] = {
+		glm::vec3(0.f, -1.f,  0.f),
+		glm::vec3(0.f,  1.f,  0.f),
+		glm::vec3(-1.f,  0.f,  0.f),
+		glm::vec3(1.f,  0.f,  0.f),
+		glm::vec3(0.f,  0.f, -1.f),
+		glm::vec3(0.f,  0.f,  1.f)
+	};
+
+	glm::vec3 cubeVerts[] = {
+		verts[1], verts[0], verts[2], verts[3],
+		verts[5], verts[6], verts[4], verts[7],
+		verts[1], verts[5], verts[0], verts[4],
+		verts[2], verts[3], verts[6], verts[7],
+		verts[0], verts[4], verts[3], verts[7],
+		verts[1], verts[2], verts[5], verts[6]
+	};
+	glm::vec3 cubeNorms[] = {
+		norms[0], norms[0], norms[0], norms[0],
+		norms[1], norms[1], norms[1], norms[1],
+		norms[2], norms[2], norms[2], norms[2],
+		norms[3], norms[3], norms[3], norms[3],
+		norms[4], norms[4], norms[4], norms[4],
+		norms[5], norms[5], norms[5], norms[5]
+	};
+	GLubyte cubeIdx[] = {
+		0, 1, 2, 3, UCHAR_MAX,
+		4, 5, 6, 7, UCHAR_MAX,
+		8, 9, 10, 11, UCHAR_MAX,
+		12, 13, 14, 15, UCHAR_MAX,
+		16, 17, 18, 19, UCHAR_MAX,
+		20, 21, 22, 23, UCHAR_MAX
+	};
+
+
+
+
+	const char* cube_vertShader =
+		"#version 330\n\
+	in vec3 in_Position;\n\
+	in vec3 in_Normal;\n\
+	out vec4 vert_Normal;\n\
+	uniform mat4 objMat;\n\
+	uniform mat4 mv_Mat;\n\
+	uniform mat4 mvpMat;\n\
+	void main() {\n\
+		gl_Position = mvpMat * objMat * vec4(in_Position, 1.0);\n\
+		vert_Normal = mv_Mat * objMat * vec4(in_Normal, 0.0);\n\
+	}";
+
+
+	const char* cube_fragShader =
+		"#version 330\n\
+in vec4 vert_Normal;\n\
+out vec4 out_Color;\n\
+uniform mat4 mv_Mat;\n\
+uniform vec4 color;\n\
+void main() {\n\
+	out_Color = vec4(color.xyz * dot(vert_Normal, mv_Mat*vec4(0.0, 1.0, 0.0, 0.0)) + color.xyz * 0.3, 1.0 );\n\
+}";
+	void setupCube() {
+		glGenVertexArrays(1, &cubeVao);
+		glBindVertexArray(cubeVao);
+		glGenBuffers(3, cubeVbo);
+
+		glBindBuffer(GL_ARRAY_BUFFER, cubeVbo[0]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVerts), cubeVerts, GL_STATIC_DRAW);
+		glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, cubeVbo[1]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(cubeNorms), cubeNorms, GL_STATIC_DRAW);
+		glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		glEnableVertexAttribArray(1);
+
+		glPrimitiveRestartIndex(UCHAR_MAX);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeVbo[2]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIdx), cubeIdx, GL_STATIC_DRAW);
+
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+		cubeShaders[0] = mycompileShader(cube_vertShader, GL_VERTEX_SHADER, "cubeVert");
+		cubeShaders[1] = mycompileShader(cube_fragShader, GL_FRAGMENT_SHADER, "cubeFrag");
+
+		cubeProgram = glCreateProgram();
+		glAttachShader(cubeProgram, cubeShaders[0]);
+		glAttachShader(cubeProgram, cubeShaders[1]);
+		glBindAttribLocation(cubeProgram, 0, "in_Position");
+		glBindAttribLocation(cubeProgram, 1, "in_Normal");
+		mylinkProgram(cubeProgram);
+	}
+	void cleanupCube() {
+		glDeleteBuffers(3, cubeVbo);
+		glDeleteVertexArrays(1, &cubeVao);
+
+		glDeleteProgram(cubeProgram);
+		glDeleteShader(cubeShaders[0]);
+		glDeleteShader(cubeShaders[1]);
+	}
+	void updateCube(const glm::mat4& transform) {
+		objMat = transform;
+	}
+	void drawCube() {
+		glEnable(GL_PRIMITIVE_RESTART);
+		glBindVertexArray(cubeVao);
+		glUseProgram(cubeProgram);
+		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(objMat));
+		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(myRV::_modelView));
+		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(myRV::_MVP));
+		glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
+		glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
+
+		glUseProgram(0);
+		glBindVertexArray(0);
+		glDisable(GL_PRIMITIVE_RESTART);
+	}
+
+	void draw2Cubes(double currentTime) {
+
+		float time = 0;
+		time = currentTime;
+		glEnable(GL_PRIMITIVE_RESTART);
+		glBindVertexArray(cubeVao);
+		glUseProgram(cubeProgram);
+
+		glm::mat4 t = glm::translate(glm::mat4(1.0f), glm::vec3(1.f, 2.0f, 0.f));
+
+		//Cube::updateCube(t);
+		objMat = t;
+
+		glm::vec4 newColor = { 0.56f, 0.75f, 0.95f, 1.0f };
+		myCube::updateColor(newColor);
+
+		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(objMat));
+		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(myRV::_modelView));
+		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(myRV::_MVP));
+		//glUniform4f(glGetUniformLocation(cubeProgram, "color"), 1.0f, 1.f, 1.f, 0.f);
+		glUniform4f(glGetUniformLocation(cubeProgram, "color"), myColor.r, myColor.g, myColor.b, myColor.a);
+		glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
+
+
+		//paint a green cube on the right side of the world
+
+		//t = glm::translate(glm::mat4(1.0f), glm::vec3((float)sin(currentTime)* 2.f + 1.f, 2.f, 0.f));
+		//glm::mat4 t2 = glm::translate(glm::mat4(1.0f), glm::vec3(1.f, 2.f, 0.f));
+		//glm::mat4 r = glm::rotate(glm::mat4(1.0f), (float)currentTime* 2.f + 3.f, glm::vec3(0.f, 1.f, 0.f));
+		//glm::mat4 s = glm::scale(glm::mat4(1.0f), glm::vec3((float)sin(currentTime)* 2.f + 3.f, (float)sin(currentTime)* 2.f + 3.f, (float)sin(currentTime)* 2.f + 3.f));
+		//Cube::updateCube(t);
+		//objMat = t*r*t2;
+
+		float timeDec = time - (int)time;
+		int timeInt = (int)time;
+
+		//RV::_projection = glm::ortho(((float)-500 / 50) + timeInt % 5 + timeDec, ((float)500 / 50) + timeInt % 5 + timeDec, (float)-500 / 50, (float)500 / 50, 0.1f, 100.f);
+
+		glm::mat4 t2 = glm::translate(glm::mat4(1.0f), glm::vec3(1.f, 2.f, 0.f));
+		objMat = t2;
+
+		glm::vec4 newColor2 = { 0.0f, (float)sin(currentTime)* 2.f + 2.f, 0.f, 1.0f };
+		myCube::updateColor(newColor2);
+
+		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(objMat));
+		//glUniform4f(glGetUniformLocation(cubeProgram, "color"), 1.0f, 1.f, 1.f, 0.f);
+		glUniform4f(glGetUniformLocation(cubeProgram, "color"), myColor.r, myColor.g, myColor.b, myColor.a);
+		glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
+
+
+		glUseProgram(0);
+		glBindVertexArray(0);
+		glDisable(GL_PRIMITIVE_RESTART);
+	}
+
+	void updateColor(const glm::vec4 newColor) {
+		myColor = newColor;
+	}
+
+}
