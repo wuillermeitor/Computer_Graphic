@@ -11,6 +11,7 @@
 #include <ctime>
 #include "GL_framework.h"
 
+enum key{u, d, t};
 
 namespace myBox {
 	void setupCube();
@@ -45,19 +46,17 @@ namespace myRV {
 
 	float panv[3] = { 0.f, -5.f, -15.f };
 	float rota[2] = { 0.f, 0.f };
+
+	float lastTime;
+	float deltaTime;
+	float timeAcum;
+	key lastPressed;
 }
 
 bool Pressed1 = false;
 bool Pressed2 = false;
 bool Pressed3 = false;
-
-
-
-
-
-
-
-
+bool keyUp = true;
 
 
 void myInitCode(void) {
@@ -67,6 +66,8 @@ void myInitCode(void) {
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+
+	myRV::timeAcum = 0;
 
 	float aux = 50.f;
 	myRV::_projection = glm::ortho((float)-myRV::width / aux, (float)myRV::width / aux, (float)-myRV::height / aux, (float)myRV::height / aux, myRV::zNear, myRV::zFar);
@@ -91,35 +92,58 @@ void myCleanupCode(void) {
 }
 
 void myRenderCode(double currentTime) {
+	myRV::deltaTime = currentTime - myRV::lastTime;
 	//Nota: Cada vez que cambias de 1 a 2 o viceversa, empieza por donde lo dejó porque el currenTime va aumentando y uso currentTime. Hay que cambiarlo pero de momento voy tirando.
 
 	const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
+
 	if (keyboardState[SDL_SCANCODE_1]) {
-		myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
-		Pressed1 = true;
-		Pressed2 = false;
-		Pressed3 = false;
-		currentTime = 0;
+		if (keyUp) {
+			myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
+			Pressed1 = true;
+			Pressed2 = false;
+			Pressed3 = false;
+			myRV::timeAcum = 0;
+			keyUp = false;
+		}
+		else {
+			myRV::timeAcum += myRV::deltaTime;
+		}
 	}
 	else if (keyboardState[SDL_SCANCODE_2]) {
-		Pressed1 = false;
-		Pressed2 = true;
-		Pressed3 = false;
-		currentTime = 0;
+		if (keyUp) {
+			Pressed1 = false;
+			Pressed2 = true;
+			Pressed3 = false;
+			myRV::timeAcum = 0;
+			keyUp = false;
+		}
+		else {
+			myRV::timeAcum += myRV::deltaTime;
+		}
 	}
 	else if (keyboardState[SDL_SCANCODE_3]) {
-		std::cout << "3" << std::endl;
-		Pressed1 = false;
-		Pressed2 = false;
-		Pressed3 = true;
-		currentTime = 0;
+		if (keyUp) {
+			Pressed1 = false;
+			Pressed2 = false;
+			Pressed3 = true;
+			myRV::timeAcum = 0;
+			keyUp = false;
+		}
+		else {
+			myRV::timeAcum += myRV::deltaTime;
+		}
+	}
+	else {
+		myRV::timeAcum += myRV::deltaTime;
+		keyUp = true;
 	}
 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	myRV::_modelView = glm::mat4(1.f);
-	myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
+	//myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
 	myRV::_modelView = glm::rotate(myRV::_modelView, myRV::rota[1], glm::vec3(1.f, 0.f, 0.f));
 	myRV::_modelView = glm::rotate(myRV::_modelView, myRV::rota[0], glm::vec3(0.f, 1.f, 0.f));
 
@@ -130,9 +154,11 @@ void myRenderCode(double currentTime) {
 		float aux = 50.f;
 		myRV::_projection = glm::ortho((float)-myRV::width / aux, (float)myRV::width / aux, (float)-myRV::height / aux, (float)myRV::height / aux, myRV::zNear, myRV::zFar);
 		myRV::_modelView = glm::mat4(1.f);
-		myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(currentTime, myRV::panv[1], myRV::panv[2]));
+		myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::timeAcum, myRV::panv[1], myRV::panv[2]));
 
 		myRV::_MVP = myRV::_projection * myRV::_modelView;
+
+		myRV::lastPressed = key::u;
 	}
 
 	else if (Pressed2) {
@@ -141,23 +167,30 @@ void myRenderCode(double currentTime) {
 		myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
 		//a) A close-up in perspective projection. The camera will approach objects in the middle of the scene, with some objects in background. 
 		if (myRV::panv[2] <= -5) {
-			myRV::panv[2] = -15.f + currentTime * 0.5f;
+			myRV::panv[2] = -15.f + myRV::timeAcum * 0.5f;
 		}
 		//b) An increase of the field of view of the camera, with the objects in the middle of the scene, and some objects in background.
 		else {
-			myRV::FOV = glm::radians(65.f + currentTime * 0.5f);
+			myRV::FOV = glm::radians(65.f + myRV::timeAcum * 0.5f);
 		}
 		myRV::_MVP = myRV::_projection * myRV::_modelView;
+
+		myRV::lastPressed = key::d;
 	}
 
 	else if (Pressed3) {
 		myRV::_projection = glm::perspective(myRV::FOV, (float)myRV::width / (float)myRV::height, myRV::zNear, myRV::zFar);
 		myRV::_modelView = glm::mat4(1.f);
 		myRV::_modelView = glm::translate(myRV::_modelView, glm::vec3(myRV::panv[0], myRV::panv[1], myRV::panv[2]));
-		myRV::panv[2] = -15.f + currentTime * 0.5f;
-		myRV::FOV = glm::radians(65.f + currentTime * 0.5f);
+		myRV::panv[2] = -15.f + myRV::timeAcum * 0.5f;
+		myRV::FOV = glm::radians(65.f + myRV::timeAcum * 0.5f);
 		myRV::_MVP = myRV::_projection * myRV::_modelView;
+
+		myRV::lastPressed = key::t;
 	}
+
+
+
 
 	glm::vec3 posicion1(1.0f, 5.0f, 5.0f);
 	glm::vec3 posicion2(2.0f, 6.0f, 6.0f);
@@ -179,6 +212,8 @@ void myRenderCode(double currentTime) {
 
 	//myCube::draw2Cubes(currentTime);
 
+
+	myRV::lastTime = currentTime;
 
 	ImGui::Render();
 }
